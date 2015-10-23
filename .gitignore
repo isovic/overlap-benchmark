@@ -1,0 +1,9 @@
+reference-genomes/
+reads/
+reads-simulated/
+*.log
+*.pyc
+*.sam
+src/*/
+*.zip
+*.tar.gz
