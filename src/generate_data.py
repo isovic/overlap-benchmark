@@ -396,7 +396,7 @@ def GenerateGridTest(reference_path, out_path, coverage=30, error_rates=[0.0, 0.
 def download_and_install():
 	sys.stderr.write('Downloading and unpacking PBsim.\n');
 	command = 'cd %s; wget http://pbsim.googlecode.com/files/pbsim-1.0.3-Linux-amd64.tar.gz; tar -xzvf pbsim-1.0.3-Linux-amd64.tar.gz' % (SCRIPT_PATH);
-	# subprocess.call(command, shell='True');
+	subprocess.call(command, shell='True');
 	sys.stderr.write('\n');
 
 	sys.stderr.write('Downloading and unpacking LAST aligner. Its scripts are needed to convert from MAF to SAM.\n');
