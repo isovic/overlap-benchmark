@@ -9,6 +9,8 @@ import numpy as np;
 
 SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__));
 
+SAM_TO_M4_BIN = '%s/blasr/pbihdfutils/bin/samtom4' % (SCRIPT_PATH);
+
 
 
 def peek(fp, num_chars):
@@ -34,6 +36,123 @@ def get_single_read(fp):
 		num_lines += 1;
 		
 	return [header.rstrip(), lines.rstrip()];
+
+def get_single_read2(fp):
+	lines = [];
+	
+	line = fp.readline();
+	header = line.rstrip();
+	header_leading_char = '';
+	if (len(header) > 0):
+		sequence_separator = header[0];
+		header_leading_char = header[0];
+		header = header[1:];			# Strip the '>' or '@' sign from the beginning.
+	else:
+		return ['', []];
+	
+	next_char = peek(fp, 1);
+	
+	line_string = '';
+	lines.append(header_leading_char + header);
+	
+	num_lines = 1;
+	#while len(next_char) > 0 and next_char != sequence_separator or (next_char == '@' and num_lines < 4):
+	while (len(next_char) > 0 and (next_char != sequence_separator or (next_char == '@' and num_lines < 4))):
+		line = fp.readline();
+		if (line.rstrip() == '+' or line.rstrip() == ('+' + header)):
+		#if (line.rstrip()[0] == '+'):
+			lines.append(line_string);
+			lines.append(line.rstrip());
+			line_string = '';
+		else:
+			line_string += line.rstrip();
+		next_char = peek(fp, 1);
+		num_lines += 1;
+		
+	lines.append(line_string);
+	
+	return [header, lines];
+
+
+def get_fastq_headers_and_lengths(fastq_path):
+	headers = [];
+	lengths = [];
+	fp_in = None;
+	try:
+		fp_in = open(fastq_path, 'r');
+	except IOError:
+		sys.stderr.write('ERROR: Could not open file "%s" for reading!\n' % fastq_path);
+		exit(1);
+	seq_id = 0;
+	while True:
+		[header, read] = get_single_read2(fp_in);
+		
+		if (len(header) == 0):
+			break;
+		headers.append(header);
+		lengths.append(len(read[1]));
+		seq_id += 1;
+	fp_in.close();
+	return [headers, lengths];
+
+def fastq_enumerate_headers_and_convert(input_fastq_path, out_fasta_path):
+    qname_hash = {};
+
+    try:
+        fp_in = open(input_fastq_path, 'r');
+    except:
+        sys.stderr.write('ERROR: Could not open file "%s" for reading! Exiting.\n' % input_fastq_path);
+        return {};
+    try:
+        fp_out = open(out_fasta_path, 'w');
+    except:
+        sys.stderr.write('ERROR: Could not open file "%s" for writing! Exiting.\n' % out_fasta_path);
+        return {};
+    current_read = 0;
+    while True:
+        [header, read] = get_single_read2(fp_in);
+        if (len(read) == 0):
+            break;
+        current_read += 1;
+        # print read;
+        fp_out.write('>' + str(current_read) + '\n');
+        fp_out.write(read[1] + '\n');
+        qname_hash[header] = str(current_read);
+        qname_hash[header.split()[0]] = str(current_read);
+    sys.stderr.write('\n');
+    fp_in.close();
+    fp_out.close();
+    return qname_hash;
+
+def change_sam_qnames(input_sam_path, header_hash, out_sam_path):
+	try:
+		fp_in = open(input_sam_path, 'r');
+	except:
+		sys.stderr.write('ERROR: Could not open file "%s" for reading! Exiting.\n' % input_sam_path);
+		return {};
+	try:
+		fp_out = open(out_sam_path, 'w');
+	except:
+		sys.stderr.write('ERROR: Could not open file "%s" for writing! Exiting.\n' % out_sam_path);
+		return {};
+	for line in fp_in:
+		line = line.strip();
+		if (len(line) == 0):
+			continue;
+
+		if (line[0] == '@'):
+			fp_out.write(line + '\n');
+			continue;
+
+		split_line = line.split('\t');
+		qname = split_line[0];
+		new_qname = header_hash[qname];
+		split_line[0] = new_qname;
+		new_line = '\t'.join(split_line);
+		fp_out.write('%s\n' % (new_line));
+
+	fp_in.close();
+	fp_out.close();
 
 def CreateFolders(folder_path):
 	if not os.path.exists(folder_path):
@@ -257,18 +376,34 @@ def GeneratePacBio(reference_path, output_path, fold_coverage=20, length_mean=30
 	if (not os.path.exists(simulator_bin)):
 		sys.stderr.write('ERROR: Could not find the PBsim binaries! Run "%s setup" first. Exiting.\n' % (sys.argv[0]));
 		exit(1);
+
+
+	### Parsing the reference FASTA file to collect reference lengths.
+	[headers, lengths] = get_fastq_headers_and_lengths(complete_genome_path);
 	
 	final_sam_file = out_file_prefix + '.sam';
 	fp = open(final_sam_file, 'w');
+	fp.write('@HD\tVN:1.3\tSO:unsorted\n');
+	i = 0;
+	while (i < len(headers)):
+		fp.write('@SQ\tSN:%s\tLN:%d\n' % (headers[i], lengths[i]));
+		i += 1;
 	fp.close();
 	
 	final_fastq_file = out_file_prefix + '.fq';
 	fp = open(final_fastq_file, 'w');
 	fp.close();
+
+	final_m4_file = out_file_prefix + '.m4';
+	final_fasta_m4_file = out_file_prefix + '-m4.fa';
+	final_sam_m4_file = out_file_prefix + '-m4.sam';
+
 # SIMULATOR_PATH=/home/ivan/work/eclipse-workspace/golden-bundle/tools/pbsim-1.0.3-Linux-amd64
 # REFERENCE_PATH=/home/ivan/work/eclipse-workspace/golden-bundle/reference-genomes/escherichia_coli.fa
 # $SIMULATOR_PATH/Linux-amd64/bin/pbsim --data-type CLR --depth 20 --model_qc $SIMULATOR_PATH/data/model_qc_clr --seed 1234567890 --prefix $OUT_FILE_PREFIX $REFERENCE_PATH
 # /last-460/scripts/maf-convert.py sam $MAF_FILE $SAM_FILE
+
+
 
 	#random_seed = '1234567890';
 	random_seed = '32874638';
@@ -306,7 +441,7 @@ def GeneratePacBio(reference_path, output_path, fold_coverage=20, length_mean=30
 	maf_files = glob.glob(out_file_prefix + '*.maf');
 	maf_files = sorted(maf_files);
 	sys.stderr.write('\n'.join(maf_files) + '\n');
-	
+
 	for maf_file in maf_files:		
 		# Convert the maf file to SAM format.
 		sam_file = maf_file[0:-3] + 'sam';
@@ -320,7 +455,7 @@ def GeneratePacBio(reference_path, output_path, fold_coverage=20, length_mean=30
 		# Here we escape the special characters so that SED command runs properly if any of these characters should to appear in a FASTA header.
 		escape_chars = r'\/()[].*^$';
 		reference_name = ''.join([('\\' + char) if char in escape_chars else char for char in reference_name]);
-		shell_command = r'cat ' + sam_file + r" | sed 's/^\(.*\)ref/\1" + reference_name + r"/' >> " + final_sam_file
+		shell_command = r'tail -n+2 ' + sam_file + r" | sed 's/^\(.*\)ref/\1" + reference_name + r"/' >> " + final_sam_file
 		sys.stderr.write(('Replacing PBsim\'s "ref" keyword with actual FASTA header') + '\n');
 		sys.stderr.write(('Executing command: "%s"' % shell_command) + '\n');
 		subprocess.call(shell_command, shell=True);
@@ -353,6 +488,17 @@ def GeneratePacBio(reference_path, output_path, fold_coverage=20, length_mean=30
 		sys.stderr.write(('Executing command: "%s"\n\n' % shell_command));
 		subprocess.call(shell_command, shell=True);
 
+	sys.stderr.write('Creating a FASTA file with enumerated headers.\n');
+	qname_hash = fastq_enumerate_headers_and_convert(final_fastq_file, final_fasta_m4_file);
+	sys.stderr.write('Converting qnames in the SAM file to enumerated values.\n');
+	change_sam_qnames(final_sam_file, qname_hash, final_sam_m4_file);
+
+	shell_command = '%s %s %s %s' % (SAM_TO_M4_BIN, final_sam_m4_file, complete_genome_path, final_m4_file);
+	sys.stderr.write('Converting the generated SAM file to BLASR\'s M4 format.\n');
+	sys.stderr.write(('Executing command: "%s"' % shell_command) + '\n');
+	subprocess.call(shell_command, shell=True);
+	sys.stderr.write((' ') + '\n');
+
 #	if (GENERATE_FIXED_AMOUNT_OF_READS == True):
 	# if (num_reads_to_generate > 0):
 	# 	ExtractNReadsFromFile(out_file_prefix, num_reads_to_generate);
@@ -361,6 +507,7 @@ def GeneratePacBio(reference_path, output_path, fold_coverage=20, length_mean=30
 		subsample_generated_reads(out_file_prefix, num_reads_to_generate);
 
 def GenerateGridTest(reference_path, out_path, coverage=30, error_rates=[0.0, 0.05, 0.10, 0.15, 0.20]):
+	# error_rates = [0.20];
 	##### OXFORD NANOPORE DATA #####
 	# --difference-ratio   ratio of differences. substitution:insertion:deletion.
 	# GenerateOxfordNanoporeFromObservedStatistics('caenorhabditis_elegans', num_reads_to_generate=num_reads_to_generate);
@@ -393,6 +540,43 @@ def GenerateGridTest(reference_path, out_path, coverage=30, error_rates=[0.0, 0.
 																	num_reads_to_generate=0);
 
 
+def setup_blasr():
+	sys.stderr.write('Started installation of BLASR.\n');
+
+	BLASR_URL = 'https://github.com/PacificBiosciences/blasr.git';
+
+	sys.stderr.write('Cloning BLASR\'s git repository.\n');
+	command = 'cd %s; git clone %s' % (SCRIPT_PATH, BLASR_URL);
+	sys.stderr.write('%s\n' % (command));
+	subprocess.call(command, shell='True');
+	sys.stderr.write('\n');
+
+	sys.stderr.write('Checking out commit "f7bf1e56871d747829a6a34b13b50debdebf1d0b" for reproducibility purposes.\n');
+	command = 'cd %s/blasr; git checkout f7bf1e56871d747829a6a34b13b50debdebf1d0b' % (SCRIPT_PATH);
+	subprocess.call(command, shell='True');
+	sys.stderr.write('\n');
+
+	yes_no = raw_input("BLASR requires some libraries to be installed. Continue? [y/n] ");
+	if (yes_no != 'y'):
+		return;
+
+	sys.stderr.write('Please note that the installation of these libraries assumes that the OS is Ubuntu/Debian based.\n');
+	sys.stderr.write('Sudo will be required.\n');
+
+	command = 'sudo apt-get install libhdf5-dev';
+	sys.stderr.write('%s\n' % (command));
+	subprocess.call(command, shell='True');
+	sys.stderr.write('\n');
+
+	sys.stderr.write('Running make.\n');
+	command = 'cd %s/blasr; make' % (SCRIPT_PATH);
+	sys.stderr.write('%s\n' % (command));
+	subprocess.call(command, shell='True');
+	sys.stderr.write('\n');
+	
+	sys.stderr.write('All instalation steps finished.\n');
+	sys.stderr.write('\n');
+
 def download_and_install():
 	sys.stderr.write('Downloading and unpacking PBsim.\n');
 	command = 'cd %s; wget http://pbsim.googlecode.com/files/pbsim-1.0.3-Linux-amd64.tar.gz; tar -xzvf pbsim-1.0.3-Linux-amd64.tar.gz' % (SCRIPT_PATH);
@@ -404,13 +588,16 @@ def download_and_install():
 	subprocess.call(command, shell='True');
 	sys.stderr.write('\n');
 
+	setup_blasr();
+
+
+
 def verbose_usage_and_exit():
 	sys.stderr.write('Simulates reads from a given genome.\n\n');
 	sys.stderr.write('Usage:\n');
 	sys.stderr.write('\t%s mode [<reference_file> <output_path> coverage]\n' % sys.argv[0]);
 	sys.stderr.write('\n');
-	sys.stderr.write('\t- mode - either "run" or "setup". Is "install" other parameters can be ommitted.\n');
-
+	sys.stderr.write('\t- mode - either "run" or "setup". If "setup" other parameters can be ommitted.\n');
 	exit(0);
 
 if __name__ == "__main__":

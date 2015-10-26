@@ -7,3 +7,4 @@ reads-simulated/
 src/*/
 *.zip
 *.tar.gz
+tests/
