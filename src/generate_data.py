@@ -173,6 +173,33 @@ def change_sam_qnames(input_sam_path, header_hash, out_sam_path):
 	fp_in.close();
 	fp_out.close();
 
+
+def fix_m4_file_references(temp_m4_file, headers, final_m4_file):
+	try:
+		fp_in = open(temp_m4_file, 'r');
+	except:
+		sys.stderr.write('ERROR: Could not open file "%s" for reading! Exiting.\n' % temp_m4_file);
+		return;
+	try:
+		fp_out = open(final_m4_file, 'w');
+	except:
+		sys.stderr.write('ERROR: Could not open file "%s" for writing! Exiting.\n' % final_m4_file);
+		return;
+
+	for line in fp_in:
+		found_header = False;
+		for header in headers:
+			if (header in line):
+				new_line = line.replace(header, header.split()[0]);
+				fp_out.write(new_line);
+				found_header = True;
+				break;
+		if (found_header == False):
+			fp_out.write(line);
+
+	fp_in.close();
+	fp_out.close();
+
 def CreateFolders(folder_path):
 	if not os.path.exists(folder_path):
 		sys.stderr.write(('Creating output folder on path: "%s".\n' % (folder_path)));
@@ -413,6 +440,7 @@ def GeneratePacBio(reference_path, output_path, fold_coverage=20, length_mean=30
 	fp = open(final_fastq_file, 'w');
 	fp.close();
 
+	temp_m4_file = out_file_prefix + '-temp.m4';
 	final_m4_file = out_file_prefix + '.m4';
 	final_fasta_m4_file = out_file_prefix + '-m4.fa';
 	final_sam_m4_file = out_file_prefix + '-m4.sam';
@@ -512,11 +540,15 @@ def GeneratePacBio(reference_path, output_path, fold_coverage=20, length_mean=30
 	sys.stderr.write('Converting qnames in the SAM file to enumerated values.\n');
 	change_sam_qnames(final_sam_file, qname_hash, final_sam_m4_file);
 
-	shell_command = '%s %s %s %s' % (SAM_TO_M4_BIN, final_sam_m4_file, complete_genome_path, final_m4_file);
+	shell_command = '%s %s %s %s' % (SAM_TO_M4_BIN, final_sam_m4_file, complete_genome_path, temp_m4_file);
 	sys.stderr.write('Converting the generated SAM file to BLASR\'s M4 format.\n');
 	sys.stderr.write(('Executing command: "%s"' % shell_command) + '\n');
 	subprocess.call(shell_command, shell=True);
 	sys.stderr.write((' ') + '\n');
+
+	sys.stderr.write('Fixing the reference names in BLASR\'s M4 conversion.\n');
+	fix_m4_file_references(temp_m4_file, headers, final_m4_file);
+	os.remove(temp_m4_file);
 
 #	if (GENERATE_FIXED_AMOUNT_OF_READS == True):
 	# if (num_reads_to_generate > 0):
@@ -527,7 +559,7 @@ def GeneratePacBio(reference_path, output_path, fold_coverage=20, length_mean=30
 
 def GenerateGridTest(reference_path, out_path, coverage=30, error_rates=[0.0, 0.05, 0.10, 0.15, 0.20]):
 	# error_rates = [0.05, 0.10, 0.15];
-	
+
 	##### OXFORD NANOPORE DATA #####
 	# --difference-ratio   ratio of differences. substitution:insertion:deletion.
 	# GenerateOxfordNanoporeFromObservedStatistics('caenorhabditis_elegans', num_reads_to_generate=num_reads_to_generate);
