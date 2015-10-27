@@ -526,7 +526,8 @@ def GeneratePacBio(reference_path, output_path, fold_coverage=20, length_mean=30
 		subsample_generated_reads(out_file_prefix, num_reads_to_generate);
 
 def GenerateGridTest(reference_path, out_path, coverage=30, error_rates=[0.0, 0.05, 0.10, 0.15, 0.20]):
-	error_rates = [0.05, 0.10, 0.15];
+	# error_rates = [0.05, 0.10, 0.15];
+	
 	##### OXFORD NANOPORE DATA #####
 	# --difference-ratio   ratio of differences. substitution:insertion:deletion.
 	# GenerateOxfordNanoporeFromObservedStatistics('caenorhabditis_elegans', num_reads_to_generate=num_reads_to_generate);
