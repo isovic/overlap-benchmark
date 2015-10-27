@@ -141,13 +141,32 @@ def change_sam_qnames(input_sam_path, header_hash, out_sam_path):
 			continue;
 
 		if (line[0] == '@'):
-			fp_out.write(line + '\n');
+			if (line.startswith('@SQ')):
+				split_line = line.split('\t');
+				found_hname = False;
+				for param in split_line:
+					if (param.startswith('SN:')):
+						hname = param.split(':')[-1];
+						new_hname = hname.split()[0];
+						new_line = line.replace(hname, new_hname);
+						fp_out.write(new_line + '\n');
+						found_hname = True;
+						break;
+				if (found_hname == False):
+					fp_out.write(line + '\n');
+			else:
+				fp_out.write(line + '\n');
 			continue;
 
 		split_line = line.split('\t');
 		qname = split_line[0];
 		new_qname = header_hash[qname];
 		split_line[0] = new_qname;
+
+		rname = split_line[2];
+		new_rname = rname.split()[0];
+		split_line[2] = new_rname;
+
 		new_line = '\t'.join(split_line);
 		fp_out.write('%s\n' % (new_line));
 
@@ -507,7 +526,7 @@ def GeneratePacBio(reference_path, output_path, fold_coverage=20, length_mean=30
 		subsample_generated_reads(out_file_prefix, num_reads_to_generate);
 
 def GenerateGridTest(reference_path, out_path, coverage=30, error_rates=[0.0, 0.05, 0.10, 0.15, 0.20]):
-	# error_rates = [0.20];
+	error_rates = [0.05, 0.10, 0.15];
 	##### OXFORD NANOPORE DATA #####
 	# --difference-ratio   ratio of differences. substitution:insertion:deletion.
 	# GenerateOxfordNanoporeFromObservedStatistics('caenorhabditis_elegans', num_reads_to_generate=num_reads_to_generate);

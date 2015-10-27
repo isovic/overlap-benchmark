@@ -8,3 +8,4 @@ src/*/
 *.zip
 *.tar.gz
 tests/
+src/*tar.gz*
