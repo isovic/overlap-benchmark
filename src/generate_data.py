@@ -8,8 +8,8 @@ import subprocess;
 import numpy as np;
 
 SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__));
-TOOLS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../tools');
-SAM_TO_M4_BIN = '%s/blasr/pbihdfutils/bin/samtom4' % (TOOLS_PATH);
+UTILITY_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../utility');
+SAM_TO_M4_BIN = '%s/blasr/pbihdfutils/bin/samtom4' % (UTILITY_PATH);
 
 
 
@@ -415,9 +415,9 @@ def GeneratePacBio(reference_path, output_path, fold_coverage=20, length_mean=30
 	out_file_prefix = '%s/reads' % (output_path);
 	CreateFolders(output_path);
 	
-	simulator_path = '%s/pbsim-1.0.3-Linux-amd64' % (TOOLS_PATH);
-	simulator_bin = '%s/pbsim-1.0.3-Linux-amd64/Linux-amd64/bin/pbsim' % (TOOLS_PATH);
-	maf_convert_path = '%s/last-534/scripts/maf-convert' % (TOOLS_PATH);
+	simulator_path = '%s/pbsim-1.0.3-Linux-amd64' % (UTILITY_PATH);
+	simulator_bin = '%s/pbsim-1.0.3-Linux-amd64/Linux-amd64/bin/pbsim' % (UTILITY_PATH);
+	maf_convert_path = '%s/last-534/scripts/maf-convert' % (UTILITY_PATH);
 
 	if (not os.path.exists(simulator_bin)):
 		sys.stderr.write('ERROR: Could not find the PBsim binaries! Run "%s setup" first. Exiting.\n' % (sys.argv[0]));
@@ -598,13 +598,13 @@ def setup_blasr():
 	BLASR_URL = 'https://github.com/PacificBiosciences/blasr.git';
 
 	sys.stderr.write('Cloning BLASR\'s git repository.\n');
-	command = 'cd %s; git clone %s' % (TOOLS_PATH, BLASR_URL);
+	command = 'cd %s; git clone %s' % (UTILITY_PATH, BLASR_URL);
 	sys.stderr.write('%s\n' % (command));
 	subprocess.call(command, shell='True');
 	sys.stderr.write('\n');
 
 	sys.stderr.write('Checking out commit "f7bf1e56871d747829a6a34b13b50debdebf1d0b" for reproducibility purposes.\n');
-	command = 'cd %s/blasr; git checkout f7bf1e56871d747829a6a34b13b50debdebf1d0b' % (TOOLS_PATH);
+	command = 'cd %s/blasr; git checkout f7bf1e56871d747829a6a34b13b50debdebf1d0b' % (UTILITY_PATH);
 	subprocess.call(command, shell='True');
 	sys.stderr.write('\n');
 
@@ -621,7 +621,7 @@ def setup_blasr():
 	sys.stderr.write('\n');
 
 	sys.stderr.write('Running make.\n');
-	command = 'cd %s/blasr; make' % (TOOLS_PATH);
+	command = 'cd %s/blasr; make' % (UTILITY_PATH);
 	sys.stderr.write('%s\n' % (command));
 	subprocess.call(command, shell='True');
 	sys.stderr.write('\n');
@@ -631,12 +631,12 @@ def setup_blasr():
 
 def download_and_install():
 	sys.stderr.write('Downloading and unpacking PBsim.\n');
-	command = 'cd %s; wget http://pbsim.googlecode.com/files/pbsim-1.0.3-Linux-amd64.tar.gz; tar -xzvf pbsim-1.0.3-Linux-amd64.tar.gz' % (TOOLS_PATH);
+	command = 'cd %s; wget http://pbsim.googlecode.com/files/pbsim-1.0.3-Linux-amd64.tar.gz; tar -xzvf pbsim-1.0.3-Linux-amd64.tar.gz' % (UTILITY_PATH);
 	subprocess.call(command, shell='True');
 	sys.stderr.write('\n');
 
 	sys.stderr.write('Downloading and unpacking LAST aligner. Its scripts are needed to convert from MAF to SAM.\n');
-	command = 'cd %s; wget http://last.cbrc.jp/last-534.zip; unzip last-534.zip' % (TOOLS_PATH);
+	command = 'cd %s; wget http://last.cbrc.jp/last-534.zip; unzip last-534.zip' % (UTILITY_PATH);
 	subprocess.call(command, shell='True');
 	sys.stderr.write('\n');
 
