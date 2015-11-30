@@ -577,16 +577,16 @@ def GenerateGridTest(reference_path, out_path, coverage=30, error_rates=[0.0, 0.
 		output_folder = '%s/%s' % (out_path, machine_name);
 
 		# These are simulations for difference_ratio obtained from LAST's alignments of E. Coli R7.3 reads (from Nick Loman).
-		# 1d reads:
+		# 2d reads:
 		# [CIGAR statistics - individual indels]
 		#                       	mean	std	median	min	max
-		# Error rate stats:     	0.41	0.05	0.40	0.10	0.60
-		# Insertion rate stats: 	0.05	0.02	0.05	0.00	0.23
-		# Deletion rate stats:  	0.16	0.05	0.15	0.00	0.49
-		# Mismatch rate stats:  	0.20	0.03	0.20	0.03	0.32
-		# Match rate stats:     	0.75	0.04	0.75	0.59	0.97
-		# Read length stats:    	3629.76	3294.04	2438.00	57.00	31299.00
-		# Difference ratio: 51:11:38 (mismatch:insertion:deletion)
+		# Error rate stats:     	0.31	0.09	0.30	0.02	0.59
+		# Insertion rate stats: 	0.05	0.03	0.05	0.00	0.28
+		# Deletion rate stats:  	0.09	0.06	0.08	0.00	0.48
+		# Mismatch rate stats:  	0.16	0.07	0.16	0.00	0.36
+		# Match rate stats:     	0.78	0.07	0.79	0.59	0.99
+		# Read length stats:    	2006.14	3015.25	614.00	42.00	28601.00
+		# Difference ratio: 55:17:28 (mismatch:insertion:deletion)
 		GeneratePacBio(reference_path, output_folder, fold_coverage=coverage, length_mean=5600, length_sd=3500, length_min=50, length_max=100000,
 																	accuracy_mean=(1.0 - error_rate), accuracy_sd=0.09, accuracy_min=(1.0 - 0.60), difference_ratio='55:17:28',
 																	num_reads_to_generate=0);
