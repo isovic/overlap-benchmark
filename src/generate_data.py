@@ -630,6 +630,9 @@ def setup_blasr():
 	sys.stderr.write('\n');
 
 def download_and_install():
+	if (not os.path.exists(UTILITY_PATH)):
+		os.path.makedirs(UTILITY_PATH);
+	
 	sys.stderr.write('Downloading and unpacking PBsim.\n');
 	command = 'cd %s; wget http://pbsim.googlecode.com/files/pbsim-1.0.3-Linux-amd64.tar.gz; tar -xzvf pbsim-1.0.3-Linux-amd64.tar.gz' % (UTILITY_PATH);
 	subprocess.call(command, shell='True');
