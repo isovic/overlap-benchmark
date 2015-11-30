@@ -207,26 +207,24 @@ def run_overlap(reads_file, truths_file, output_path):
 	if (not os.path.exists(output_path)):
 		os.makedirs(output_path);
 
-	# run_graphmap(reads_file, '%s/overlaps-graphmap.mhap' % (output_path));
+	run_graphmap(reads_file, '%s/overlaps-graphmap.mhap' % (output_path));
+	run_mhap_default(reads_file, '%s/overlaps-mhap-default.mhap' % (output_path));
+	run_mhap_nanopore_fast(reads_file, '%s/overlaps-mhap-nanopore_fast.mhap' % (output_path));
+	run_mhap_pacbio_fast(reads_file, '%s/overlaps-mhap-pacbio_fast.mhap' % (output_path));
+	run_mhap_pacbio_sensitive(reads_file, '%s/overlaps-mhap-pacbio_sensitive.mhap' % (output_path));
+	run_minimap_default(reads_file, '%s/overlaps-minimap-default.mhap' % (output_path));
+	run_minimap_github_params(reads_file, '%s/overlaps-minimap-github_params.mhap' % (output_path));
 
-	# run_mhap_default(reads_file, '%s/overlaps-mhap-default.mhap' % (output_path));
-	# run_mhap_nanopore_fast(reads_file, '%s/overlaps-mhap-nanopore_fast.mhap' % (output_path));
-	# run_mhap_pacbio_fast(reads_file, '%s/overlaps-mhap-pacbio_fast.mhap' % (output_path));
-	# run_mhap_pacbio_sensitive(reads_file, '%s/overlaps-mhap-pacbio_sensitive.mhap' % (output_path));
+	evaluate_overlaps('%s/overlaps-graphmap.mhap' % (output_path), truths_file);
+	evaluate_overlaps('%s/overlaps-mhap-default.mhap' % (output_path), truths_file);
+	evaluate_overlaps('%s/overlaps-mhap-nanopore_fast.mhap' % (output_path), truths_file);
+	evaluate_overlaps('%s/overlaps-mhap-pacbio_fast.mhap' % (output_path), truths_file);
+	evaluate_overlaps('%s/overlaps-mhap-pacbio_sensitive.mhap' % (output_path), truths_file);
+	evaluate_overlaps('%s/overlaps-minimap-default.mhap' % (output_path), truths_file);
+	evaluate_overlaps('%s/overlaps-minimap-github_params.mhap' % (output_path), truths_file);
 
-	# run_minimap_default(reads_file, '%s/overlaps-minimap-default.mhap' % (output_path));
-	# run_minimap_github_params(reads_file, '%s/overlaps-minimap-github_params.mhap' % (output_path));
-
-	# evaluate_overlaps('%s/overlaps-graphmap.mhap' % (output_path), truths_file);
-	# evaluate_overlaps('%s/overlaps-mhap-default.mhap' % (output_path), truths_file);
-	# evaluate_overlaps('%s/overlaps-mhap-nanopore_fast.mhap' % (output_path), truths_file);
-	# evaluate_overlaps('%s/overlaps-mhap-pacbio_fast' % (output_path), truths_file);
-	# evaluate_overlaps('%s/overlaps-mhap-pacbio_sensitive.mhap' % (output_path), truths_file);
-	# evaluate_overlaps('%s/overlaps-minimap-default.mhap' % (output_path), truths_file);
-	# evaluate_overlaps('%s/overlaps-minimap-github_params.mhap' % (output_path), truths_file);
-
-	# [sensitivity, specificity, ppv, cputime, maxrss] = 
 	results = '';
+	results += '%s\n' % (output_path);
 	results += 'overlapper\tsensitivity\tspecificity\tppv\tcputime\tmaxrss\n';
 	results += 'graphmap\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-graphmap.mhap.eval.txt' % (output_path), '%s/overlaps-graphmap.memtime' % (output_path))]) + '\n';
 	results += 'mhap-nanopore_fast\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-mhap-nanopore_fast.mhap.eval.txt' % (output_path), '%s/overlaps-mhap-nanopore_fast.memtime' % (output_path))]) + '\n';
@@ -235,6 +233,7 @@ def run_overlap(reads_file, truths_file, output_path):
 	results += 'mhap-default\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-mhap-default.mhap.eval.txt' % (output_path), '%s/overlaps-mhap-default.memtime' % (output_path))]) + '\n';
 	results += 'minimap-default\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-minimap-default.mhap.eval.txt' % (output_path), '%s/overlaps-minimap-default.memtime' % (output_path))]) + '\n';
 	results += 'minimap-github_params\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-minimap-github_params.mhap.eval.txt' % (output_path), '%s/overlaps-minimap-github_params.memtime' % (output_path))]) + '\n';
+	results += '\n';
 	fp = open('%s/summary.csv' % (output_path), 'w');
 	fp.write(results);
 	fp.close();
