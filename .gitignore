@@ -9,3 +9,6 @@ src/*/
 *.tar.gz
 tests/
 src/*tar.gz*
+results/
+tools/
+utility/

@@ -61,31 +61,65 @@ def setup_minimap():
 def run_graphmap(reads_file, out_overlaps_file):
 	memtime_file = os.path.splitext(out_overlaps_file)[0] + '.memtime';
 	bin_file = '%s/graphmap/bin/Linux-x64/graphmap' % (TOOLS_PATH);
-	execute_command(DRY_RUN, '%s %s -r %s -d %s -o %s -L mhap' % (measure_command_wrapper(memtime_file), bin_file, reads_file, reads_file, out_overlaps_file));
+	execute_command(DRY_RUN, '%s %s -w owler -r %s -d %s -o %s -L mhap' % (measure_command_wrapper(memtime_file), bin_file, reads_file, reads_file, out_overlaps_file));
 
-def run_mhap(reads_file, out_overlaps_file):
+def run_mhap_default(reads_file, out_overlaps_file):
 	memtime_file = os.path.splitext(out_overlaps_file)[0] + '.memtime';
 	bin_file = '%s/MHAP/target/mhap-1.6.jar' % (TOOLS_PATH);
 	execute_command(DRY_RUN, '%s java -Xmx32g -server -jar %s -s %s > %s' % (measure_command_wrapper(memtime_file), bin_file, reads_file, out_overlaps_file));
 
-def run_minimap(reads_file, out_overlaps_file):
+def run_mhap_nanopore_fast(reads_file, out_overlaps_file):
+	memtime_file = os.path.splitext(out_overlaps_file)[0] + '.memtime';
+	bin_file = '%s/MHAP/target/mhap-1.6.jar' % (TOOLS_PATH);
+	execute_command(DRY_RUN, '%s java -Xmx32g -server -jar %s -s %s --nanopore-fast > %s' % (measure_command_wrapper(memtime_file), bin_file, reads_file, out_overlaps_file));
+
+def run_mhap_pacbio_fast(reads_file, out_overlaps_file):
+	memtime_file = os.path.splitext(out_overlaps_file)[0] + '.memtime';
+	bin_file = '%s/MHAP/target/mhap-1.6.jar' % (TOOLS_PATH);
+	execute_command(DRY_RUN, '%s java -Xmx32g -server -jar %s -s %s --pacbio-fast > %s' % (measure_command_wrapper(memtime_file), bin_file, reads_file, out_overlaps_file));
+
+def run_mhap_pacbio_sensitive(reads_file, out_overlaps_file):
+	memtime_file = os.path.splitext(out_overlaps_file)[0] + '.memtime';
+	bin_file = '%s/MHAP/target/mhap-1.6.jar' % (TOOLS_PATH);
+	execute_command(DRY_RUN, '%s java -Xmx32g -server -jar %s -s %s --pacbio-sensitive > %s' % (measure_command_wrapper(memtime_file), bin_file, reads_file, out_overlaps_file));
+
+def run_minimap_default(reads_file, out_overlaps_file):
 	memtime_file = os.path.splitext(out_overlaps_file)[0] + '.memtime';
 	bin_file = '%s/minimap/minimap' % (TOOLS_PATH);
-	execute_command(DRY_RUN, '%s %s -Sw5 -L100 -m0 %s %s > %s.paf' % (measure_command_wrapper(memtime_file), bin_file, reads_file, out_overlaps_file));
-	execute_command(DRY_RUN, '%s/miniasm/misc/paf2mhap.pl %s %s.paf > %s' % (reads_file, out_overlaps_file, out_overlaps_file));
+	execute_command(DRY_RUN, '%s %s %s %s > %s.paf' % (measure_command_wrapper(memtime_file), bin_file, reads_file, reads_file, out_overlaps_file));
+	execute_command(DRY_RUN, '%s/miniasm/misc/paf2mhap.pl %s %s.paf > %s' % (TOOLS_PATH, reads_file, out_overlaps_file, out_overlaps_file));
+
+def run_minimap_github_params(reads_file, out_overlaps_file):
+	memtime_file = os.path.splitext(out_overlaps_file)[0] + '.memtime';
+	bin_file = '%s/minimap/minimap' % (TOOLS_PATH);
+	execute_command(DRY_RUN, '%s %s -Sw5 -L100 -m0 %s %s > %s.paf' % (measure_command_wrapper(memtime_file), bin_file, reads_file, reads_file, out_overlaps_file));
+	execute_command(DRY_RUN, '%s/miniasm/misc/paf2mhap.pl %s %s.paf > %s' % (TOOLS_PATH, reads_file, out_overlaps_file, out_overlaps_file));
 
 def evaluate_overlaps(overlaps_file, truth_overlaps):
 	bin_file = '%s/MHAP/target/mhap-1.6.jar edu.umd.marbl.mhap.main.EstimateROC' % (TOOLS_PATH);
-	execute_command(DRY_RUN, 'java -cp %s %s %s 2>&1 | tee %s.eval.txt' % (bin_file, overlaps_file, truth_overlaps, overlaps_file));
+	execute_command(DRY_RUN, 'java -cp %s %s %s %s 2>&1 | tee %s.eval.txt' % (bin_file, truth_overlaps, overlaps_file, reads_file, overlaps_file));
 
 def run_overlap(reads_file, truths_file, output_path):
+	if (not os.path.exists(output_path)):
+		os.makedirs(output_path);
+
 	run_graphmap(reads_file, '%s/overlaps-graphmap.mhap' % (output_path));
-	run_mhap(reads_file, '%s/overlaps-mhap.mhap' % (output_path));
-	run_minimap(reads_file, '%s/overlaps-minimap.mhap' % (output_path));
+
+	run_mhap_default(reads_file, '%s/overlaps-mhap-default.mhap' % (output_path));
+	run_mhap_nanopore_fast(reads_file, '%s/overlaps-mhap-nanopore_fast.mhap' % (output_path));
+	run_mhap_pacbio_fast(reads_file, '%s/overlaps-mhap-pacbio_fast.mhap' % (output_path));
+	run_mhap_pacbio_sensitive(reads_file, '%s/overlaps-mhap-pacbio_sensitive.mhap' % (output_path));
+
+	run_minimap_default(reads_file, '%s/overlaps-minimap-default.mhap' % (output_path));
+	run_minimap_github_params(reads_file, '%s/overlaps-minimap-github_params.mhap' % (output_path));
 
 	evaluate_overlaps('%s/overlaps-graphmap.mhap' % (output_path), truths_file);
-	evaluate_overlaps('%s/overlaps-mhap.mhap' % (output_path), truths_file);
-	evaluate_overlaps('%s/overlaps-minimap.mhap' % (output_path), truths_file);
+	evaluate_overlaps('%s/overlaps-mhap-default.mhap' % (output_path), truths_file);
+	evaluate_overlaps('%s/overlaps-mhap-nanopore_fast.mhap' % (output_path), truths_file);
+	evaluate_overlaps('%s/overlaps-mhap-pacbio_fast' % (output_path), truths_file);
+	evaluate_overlaps('%s/overlaps-mhap-pacbio_sensitive.mhap' % (output_path), truths_file);
+	evaluate_overlaps('%s/overlaps-minimap-default.mhap' % (output_path), truths_file);
+	evaluate_overlaps('%s/overlaps-minimap-github_params.mhap' % (output_path), truths_file);
 
 #################################################
 #################################################
