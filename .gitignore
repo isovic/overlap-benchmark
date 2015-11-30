@@ -1,4 +1,4 @@
-reference-genomes/
+reference-genomes/*
 reads/
 reads-simulated/
 *.log
@@ -6,9 +6,10 @@ reads-simulated/
 *.sam
 src/*/
 *.zip
-*.tar.gz
+!*.tar.gz
 tests/
 src/*tar.gz*
 results/
 tools/
 utility/
+temp/
