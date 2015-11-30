@@ -76,7 +76,7 @@ def run_minimap(reads_file, out_overlaps_file):
 
 def evaluate_overlaps(overlaps_file, truth_overlaps):
 	bin_file = '%s/MHAP/target/mhap-1.6.jar edu.umd.marbl.mhap.main.EstimateROC' % (TOOLS_PATH);
-	execute_command(DRY_RUN, 'java -cp %s %s %s' % (bin_file, overlaps_file, truth_overlaps));
+	execute_command(DRY_RUN, 'java -cp %s %s %s 2>&1 | tee %s.eval.txt' % (bin_file, overlaps_file, truth_overlaps, overlaps_file));
 
 def run_overlap(reads_file, truths_file, output_path):
 	run_graphmap(reads_file, '%s/overlaps-graphmap.mhap' % (output_path));
