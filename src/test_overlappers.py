@@ -92,6 +92,9 @@ def run_overlap(reads_file, truths_file, output_path):
 #################################################
 
 def download_and_install():
+	if (not os.path.exists(TOOLS_PATH)):
+		os.makedirs(TOOLS_PATH);
+
 	setup_graphmap();
 	setup_mhap();
 	setup_daligner();
