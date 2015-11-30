@@ -95,31 +95,151 @@ def run_minimap_github_params(reads_file, out_overlaps_file):
 	execute_command(DRY_RUN, '%s %s -Sw5 -L100 -m0 %s %s > %s.paf' % (measure_command_wrapper(memtime_file), bin_file, reads_file, reads_file, out_overlaps_file));
 	execute_command(DRY_RUN, '%s/miniasm/misc/paf2mhap.pl %s %s.paf > %s' % (TOOLS_PATH, reads_file, out_overlaps_file, out_overlaps_file));
 
+#################################################
+#################################################
+#################################################
+
 def evaluate_overlaps(overlaps_file, truth_overlaps):
 	bin_file = '%s/MHAP/target/mhap-1.6.jar edu.umd.marbl.mhap.main.EstimateROC' % (TOOLS_PATH);
 	execute_command(DRY_RUN, 'java -cp %s %s %s %s 2>&1 | tee %s.eval.txt' % (bin_file, truth_overlaps, overlaps_file, reads_file, overlaps_file));
+
+def parse_results(summary_file, memtime_file):
+	[sensitivity, specificity, ppv] = parse_summary(summary_file);
+	[cmdline, realtime, cputime, usertime, systemtime, maxrss, time_unit, mem_unit] = parse_memtime(memtime_file);
+	return [sensitivity, specificity, ppv, cputime, maxrss];
+
+def parse_summary(summary_file):
+	fp_summary = None;
+	try:
+		fp_summary = open(summary_file, 'r');
+	except:
+		sys.stderr.write('ERROR: Could not open file "%s" for reading!\n' % (summary_file));
+		return;
+
+	sensitivity = '-';
+	specificity = '-';
+	ppv = '-';
+
+	for line in fp_summary:
+		split_line = line.strip().split(':');
+		if (split_line[0] == 'Estimated sensitivity'):
+			sensitivity = float(split_line[-1].strip());
+		elif (split_line[0] == 'Estimated specificity'):
+			specificity = float(split_line[-1].strip());
+		elif (split_line[0] == 'Estimated PPV'):
+			ppv = float(split_line[-1].strip());
+
+	return [sensitivity, specificity, ppv];
+
+def parse_memtime(memtime_path):
+	cmdline = '';
+	realtime = 0;
+	cputime = 0;
+	usertime = 0;
+	systemtime = 0;
+	maxrss = 0;
+	rsscache = 0;
+	time_unit = '';
+	mem_unit = '';
+
+	try:
+		fp = open(memtime_path, 'r');
+		lines = [line.strip() for line in fp.readlines() if (len(line.strip()) > 0)];
+		fp.close();
+	except Exception, e:
+		# sys.stderr.write('ERROR: Could not find memory and time statistics in file "%s".\n' % (memtime_path));
+		return [cmdline, realtime, cputime, usertime, systemtime, maxrss, time_unit, mem_unit];
+
+	for line in lines:
+		if (len(line.strip().split(':')) != 2):
+			continue;
+
+		if (line.startswith('Command line:')):
+			cmdline = line.split(':')[1].strip();
+		elif (line.startswith('Real time:')):
+			split_line = line.split(':')[1].strip().split(' ');
+			realtime = float(split_line[0].strip());
+			try:
+				time_unit = split_line[1].strip();
+			except:
+				sys.stderr.write('ERROR: No time unit specified in line: "%s"!\n' % (line.strip()));
+		elif (line.startswith('CPU time:')):
+			split_line = line.split(':')[1].strip().split(' ');
+			cputime = float(split_line[0].strip());
+			try:
+				time_unit = split_line[1].strip();
+			except:
+				sys.stderr.write('ERROR: No time unit specified in line: "%s"!\n' % (line.strip()));
+		elif (line.startswith('User time:')):
+			split_line = line.split(':')[1].strip().split(' ');
+			usertime = float(split_line[0].strip());
+			try:
+				time_unit = split_line[1].strip();
+			except:
+				sys.stderr.write('ERROR: No time unit specified in line: "%s"!\n' % (line.strip()));
+		elif (line.startswith('System time:')):
+			split_line = line.split(':')[1].strip().split(' ');
+			systemtime = float(split_line[0].strip());
+			try:
+				time_unit = split_line[1].strip();
+			except:
+				sys.stderr.write('ERROR: No time unit specified in line: "%s"!\n' % (line.strip()));
+		elif (line.startswith('Maximum RSS:')):
+			split_line = line.split(':')[1].strip().split(' ');
+			maxrss = float(split_line[0].strip());
+			try:
+				mem_unit = split_line[1].strip();
+			except:
+				sys.stderr.write('ERROR: No time unit specified in line: "%s"!\n' % (line.strip()));
+
+	if (cputime == -1.0):
+		cputime = usertime + systemtime;
+
+	return [cmdline, realtime, cputime, usertime, systemtime, maxrss, time_unit, mem_unit];
+
+
+
+#################################################
+#################################################
+#################################################
 
 def run_overlap(reads_file, truths_file, output_path):
 	if (not os.path.exists(output_path)):
 		os.makedirs(output_path);
 
-	run_graphmap(reads_file, '%s/overlaps-graphmap.mhap' % (output_path));
+	# run_graphmap(reads_file, '%s/overlaps-graphmap.mhap' % (output_path));
 
-	run_mhap_default(reads_file, '%s/overlaps-mhap-default.mhap' % (output_path));
-	run_mhap_nanopore_fast(reads_file, '%s/overlaps-mhap-nanopore_fast.mhap' % (output_path));
-	run_mhap_pacbio_fast(reads_file, '%s/overlaps-mhap-pacbio_fast.mhap' % (output_path));
-	run_mhap_pacbio_sensitive(reads_file, '%s/overlaps-mhap-pacbio_sensitive.mhap' % (output_path));
+	# run_mhap_default(reads_file, '%s/overlaps-mhap-default.mhap' % (output_path));
+	# run_mhap_nanopore_fast(reads_file, '%s/overlaps-mhap-nanopore_fast.mhap' % (output_path));
+	# run_mhap_pacbio_fast(reads_file, '%s/overlaps-mhap-pacbio_fast.mhap' % (output_path));
+	# run_mhap_pacbio_sensitive(reads_file, '%s/overlaps-mhap-pacbio_sensitive.mhap' % (output_path));
 
-	run_minimap_default(reads_file, '%s/overlaps-minimap-default.mhap' % (output_path));
-	run_minimap_github_params(reads_file, '%s/overlaps-minimap-github_params.mhap' % (output_path));
+	# run_minimap_default(reads_file, '%s/overlaps-minimap-default.mhap' % (output_path));
+	# run_minimap_github_params(reads_file, '%s/overlaps-minimap-github_params.mhap' % (output_path));
 
-	evaluate_overlaps('%s/overlaps-graphmap.mhap' % (output_path), truths_file);
-	evaluate_overlaps('%s/overlaps-mhap-default.mhap' % (output_path), truths_file);
-	evaluate_overlaps('%s/overlaps-mhap-nanopore_fast.mhap' % (output_path), truths_file);
-	evaluate_overlaps('%s/overlaps-mhap-pacbio_fast' % (output_path), truths_file);
-	evaluate_overlaps('%s/overlaps-mhap-pacbio_sensitive.mhap' % (output_path), truths_file);
-	evaluate_overlaps('%s/overlaps-minimap-default.mhap' % (output_path), truths_file);
-	evaluate_overlaps('%s/overlaps-minimap-github_params.mhap' % (output_path), truths_file);
+	# evaluate_overlaps('%s/overlaps-graphmap.mhap' % (output_path), truths_file);
+	# evaluate_overlaps('%s/overlaps-mhap-default.mhap' % (output_path), truths_file);
+	# evaluate_overlaps('%s/overlaps-mhap-nanopore_fast.mhap' % (output_path), truths_file);
+	# evaluate_overlaps('%s/overlaps-mhap-pacbio_fast' % (output_path), truths_file);
+	# evaluate_overlaps('%s/overlaps-mhap-pacbio_sensitive.mhap' % (output_path), truths_file);
+	# evaluate_overlaps('%s/overlaps-minimap-default.mhap' % (output_path), truths_file);
+	# evaluate_overlaps('%s/overlaps-minimap-github_params.mhap' % (output_path), truths_file);
+
+	# [sensitivity, specificity, ppv, cputime, maxrss] = 
+	results = '';
+	results += 'overlapper\tsensitivity\tspecificity\tppv\tcputime\tmaxrss\n';
+	results += 'graphmap\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-graphmap.mhap.eval.txt' % (output_path), '%s/overlaps-graphmap.memtime' % (output_path))]) + '\n';
+	results += 'mhap-nanopore_fast\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-mhap-nanopore_fast.mhap.eval.txt' % (output_path), '%s/overlaps-mhap-nanopore_fast.memtime' % (output_path))]) + '\n';
+	results += 'mhap-pacbio_fast\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-mhap-pacbio_fast.mhap.eval.txt' % (output_path), '%s/overlaps-mhap-pacbio_fast.memtime' % (output_path))]) + '\n';
+	results += 'mhap-pacbio_sensitive\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-mhap-pacbio_sensitive.mhap.eval.txt' % (output_path), '%s/overlaps-mhap-pacbio_sensitive.memtime' % (output_path))]) + '\n';
+	results += 'mhap-default\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-mhap-default.mhap.eval.txt' % (output_path), '%s/overlaps-mhap-default.memtime' % (output_path))]) + '\n';
+	results += 'minimap-default\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-minimap-default.mhap.eval.txt' % (output_path), '%s/overlaps-minimap-default.memtime' % (output_path))]) + '\n';
+	results += 'minimap-github_params\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-minimap-github_params.mhap.eval.txt' % (output_path), '%s/overlaps-minimap-github_params.memtime' % (output_path))]) + '\n';
+	fp = open('%s/summary.csv' % (output_path), 'w');
+	fp.write(results);
+	fp.close();
+
+
 
 #################################################
 #################################################
