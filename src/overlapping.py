@@ -61,7 +61,7 @@ def setup_minimap():
 def run_graphmap(reads_file, out_overlaps_file):
 	memtime_file = os.path.splitext(out_overlaps_file)[0] + '.memtime';
 	bin_file = '%s/graphmap/bin/Linux-x64/graphmap' % (TOOLS_PATH);
-	execute_command(DRY_RUN, '%s %s -w owler -r %s -d %s -o %s -L mhap' % (measure_command_wrapper(memtime_file), bin_file, reads_file, reads_file, out_overlaps_file));
+	execute_command(DRY_RUN, '%s %s -w owler -B 0 -r %s -d %s -o %s -L mhap' % (measure_command_wrapper(memtime_file), bin_file, reads_file, reads_file, out_overlaps_file));
 
 def run_mhap_default(reads_file, out_overlaps_file):
 	memtime_file = os.path.splitext(out_overlaps_file)[0] + '.memtime';
@@ -225,14 +225,14 @@ def run_overlap(reads_file, truths_file, output_path):
 
 	results = '';
 	results += '%s\n' % (output_path);
-	results += 'overlapper\tsensitivity\tspecificity\tppv\tcputime\tmaxrss\n';
-	results += 'graphmap\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-graphmap.mhap.eval.txt' % (output_path), '%s/overlaps-graphmap.memtime' % (output_path))]) + '\n';
-	results += 'mhap-nanopore_fast\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-mhap-nanopore_fast.mhap.eval.txt' % (output_path), '%s/overlaps-mhap-nanopore_fast.memtime' % (output_path))]) + '\n';
-	results += 'mhap-pacbio_fast\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-mhap-pacbio_fast.mhap.eval.txt' % (output_path), '%s/overlaps-mhap-pacbio_fast.memtime' % (output_path))]) + '\n';
-	results += 'mhap-pacbio_sensitive\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-mhap-pacbio_sensitive.mhap.eval.txt' % (output_path), '%s/overlaps-mhap-pacbio_sensitive.memtime' % (output_path))]) + '\n';
-	results += 'mhap-default\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-mhap-default.mhap.eval.txt' % (output_path), '%s/overlaps-mhap-default.memtime' % (output_path))]) + '\n';
-	results += 'minimap-default\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-minimap-default.mhap.eval.txt' % (output_path), '%s/overlaps-minimap-default.memtime' % (output_path))]) + '\n';
-	results += 'minimap-github_params\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-minimap-github_params.mhap.eval.txt' % (output_path), '%s/overlaps-minimap-github_params.memtime' % (output_path))]) + '\n';
+	results += 'Overlapper\tSensitivity\tSpecificity\tPPV\tCPU time [sec]\tMax. RSS [MB]\n';
+	results += 'GraphMap (-w owler)\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-graphmap.mhap.eval.txt' % (output_path), '%s/overlaps-graphmap.memtime' % (output_path))]) + '\n';
+	results += 'MHAP (nanopore-fast)\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-mhap-nanopore_fast.mhap.eval.txt' % (output_path), '%s/overlaps-mhap-nanopore_fast.memtime' % (output_path))]) + '\n';
+	results += 'MHAP (pacbio-fast)\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-mhap-pacbio_fast.mhap.eval.txt' % (output_path), '%s/overlaps-mhap-pacbio_fast.memtime' % (output_path))]) + '\n';
+	results += 'MHAP (pacbio-sensitive)\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-mhap-pacbio_sensitive.mhap.eval.txt' % (output_path), '%s/overlaps-mhap-pacbio_sensitive.memtime' % (output_path))]) + '\n';
+	results += 'MHAP (default)\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-mhap-default.mhap.eval.txt' % (output_path), '%s/overlaps-mhap-default.memtime' % (output_path))]) + '\n';
+	results += 'minimap (default)\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-minimap-default.mhap.eval.txt' % (output_path), '%s/overlaps-minimap-default.memtime' % (output_path))]) + '\n';
+	results += 'minimap (-Sw5 -L100 -m0)\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-minimap-github_params.mhap.eval.txt' % (output_path), '%s/overlaps-minimap-github_params.memtime' % (output_path))]) + '\n';
 	results += '\n';
 	fp = open('%s/summary.csv' % (output_path), 'w');
 	fp.write(results);
