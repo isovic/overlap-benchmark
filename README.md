@@ -5,7 +5,7 @@ Currently implemented tests aim at benchmarking overlappers.
 This repo is in early stages of development.  
 
 ### Simulations and evaluation
-Simulated datasets were generated using PBSim. The error profile used was "55:17:28" which are the same as the 2d parameters determined using LAST from the E. Coli R7.3 data from 2014. (See [GraphMap paper](http://biorxiv.org/content/early/2015/06/10/020719)).  
+Simulated datasets are generated using PBSim. The error profile used is "55:17:28" which is the same as the 2d parameters determined using LAST from the E. Coli R7.3 data from 2014. (See [GraphMap paper](http://biorxiv.org/content/early/2015/06/10/020719)).  
 To be verbose, simulations were performed with parameters specified as:  
 ```  
 length_mean = 5600  
@@ -17,10 +17,11 @@ accuracy_sd = 0.09
 accuracy_min = 0.40  
 difference_ratio = '55:17:28' (mismatch:insertion:deletion)  
 ```  
-The alignments of simulated reads were converted from MAF to SAM format using LAST's ```maf-convert``` script.  
+The alignments of simulated reads are converted from MAF to SAM format using LAST's ```maf-convert``` script.  
 
 To evaluate overlaps, MHAP's ```edu.umd.marbl.mhap.main.EstimateROC``` module is used.  
-Since ```EstimateROC``` requires either BLASR's M4 file (or an MHAP file) containing truth overlaps, we use BLASR's tool ```samtom4``` to generate the appropriate truth file.  
+Since ```EstimateROC``` requires either BLASR's M4 file (or an MHAP file) containing truth overlaps, we use BLASR's tool ```samtom4``` to generate the appropriate truth file. The truth overlaps are located in files named ```reads.m4```.  
+Also, since ```EstimateROC``` requires an the input FASTA reads file to be provided, headers of the simulated reads are replaced with their ordinal number of appearance (so that they can be matched to the read ID's in the MHAP files). Final reads are given in files named ```reads-m4.fa```.  
 
 Additionally, to convert Minimap's overlaps to MHAP format, a script ```paf2mhap.pl``` is used ([https://github.com/lh3/miniasm/blob/master/misc/paf2mhap.pl](https://github.com/lh3/miniasm/blob/master/misc/paf2mhap.pl)).
 
