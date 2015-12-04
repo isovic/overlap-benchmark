@@ -204,6 +204,7 @@ def parse_memtime(memtime_path):
 #################################################
 
 def run_overlap(reads_file, truths_file, output_path):
+	output_path = os.path.abspath(output_path);
 	if (not os.path.exists(output_path)):
 		os.makedirs(output_path);
 
@@ -224,7 +225,7 @@ def run_overlap(reads_file, truths_file, output_path):
 	evaluate_overlaps('%s/overlaps-minimap-github_params.mhap' % (output_path), truths_file);
 
 	results = '';
-	results += '%s\n' % (output_path);
+	results += 'Output path:\t%s\n' % (output_path);
 	results += 'Overlapper\tSensitivity\tSpecificity\tPPV\tCPU time [sec]\tMax. RSS [MB]\n';
 	results += 'GraphMap (-w owler)\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-graphmap.mhap.eval.txt' % (output_path), '%s/overlaps-graphmap.memtime' % (output_path))]) + '\n';
 	results += 'MHAP (nanopore-fast)\t' + '\t'.join([str(val) for val in parse_results('%s/overlaps-mhap-nanopore_fast.mhap.eval.txt' % (output_path), '%s/overlaps-mhap-nanopore_fast.memtime' % (output_path))]) + '\n';
